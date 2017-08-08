@@ -9,8 +9,7 @@
   },
   "types": "lib/utils/index.d.ts",
   "scripts": {
-    "build": "./node_modules/.bin/tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "./node_modules/.bin/tsc"
   },
   "keywords": [],
   "author": "tintoy",
@@ -23,6 +22,7 @@
     "yaml-front-matter": "^3.4.0"
   },
   "devDependencies": {
+    "@types/glob": "^5.0.30",
     "@types/js-yaml": "^3.9.0",
     "@types/mz": "0.0.31",
     "@types/node": "^8.0.19",

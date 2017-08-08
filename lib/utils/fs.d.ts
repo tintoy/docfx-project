@@ -1,11 +1,5 @@
 import { IMinimatch } from 'minimatch';
-/**
- * Find all files and directories matching a specific pattern.
- *
- * @param baseDir The base directory in which to start searching.
- * @param globPattern A globbing pattern describing the files to find.
- */
-export declare function findFiles(baseDir: string, globPattern: string): Promise<string[]>;
+import { FileFilter } from './file-filter';
 /**
  * Read and parse file contents as JSON.
  * @param fileName The name of the file to read.
@@ -38,4 +32,4 @@ export declare function createMatchers(...patterns: string[]): IMinimatch[];
  *
  * @param baseDir The base directory to scan.
  */
-export declare function getFilesRecursive(baseDir: string): Promise<string[]>;
+export declare function getFilesRecursive(baseDir: string, filter?: FileFilter): Promise<string[]>;

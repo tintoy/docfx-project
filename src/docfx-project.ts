@@ -1,41 +1,77 @@
 import * as path from 'path';
 
-import { FileFilter } from './file-filter';
-import { readJson, getFilesRecursive } from './utils/fs';
+import { FileFilter } from './utils/file-filter';
+import { readJson, findFiles } from './utils/fs';
+
+/** DocFX supports this '**' glob syntax, but we don't. */
+const illegalGlobStar = '**.';
+
+/** We support this '**' glob syntax. */
+const legalGlobStar = '**/*.';
 
 /**
  * Represents a DocFX project and its files.
  */
 export class DocFXProject {
+    /** A FileFilter used to filter the project's content files. */
     private _contentFileFilter: FileFilter;
     
+    /** The full path to the project file (`docfx.json`). */
     public readonly projectFile: string;
+
+    /** The full path to the project directory. */
     public readonly projectDir: string;
 
+    /**
+     * Create a new {@link DocFXProject}.
+     * 
+     * @param projectFile The full path to the project file (`docfx.json`).
+     * @param projectData The DocFX project data.
+     */
     constructor(projectFile: string, projectData: DocFXProjectData) {
         this.projectFile = projectFile;
         this.projectDir = path.dirname(projectFile);
 
         this._contentFileFilter = createFileFilter(this.projectDir, projectData.build.content);
+
+        // Bloody this.
+        this.includesContentFile = this.includesContentFile.bind(this);
     }
 
     /**
-     * Determine whether the specified conent file is included in the project.
+     * Determine whether the specified content file is included in the project.
      * 
      * @param filePath The full or relative path of the file.
+     * 
+     * @returns {boolean} true, if the file is included in the project; otherwise, false.
      */
     public includesContentFile(filePath: string): boolean {
         return this._contentFileFilter.shouldIncludeFile(filePath);
     }
 
     /**
-     * List all content files in the project.
+     * Retrieve the paths of all content files in the project.
+     * 
+     * @param extensions {string[]} Optional file extensions used to filter the results.
+     * 
+     * @returns {Promise<string[]>} A promise that resolves to the file paths.
      */
     public async getContentFiles(...extensions: string[]): Promise<string[]> {
         // This is cheating somewhat; there's no guarantee that the final base directory for a file group lies within the project directory.
         // TODO: Capture file groups in constructor and walk each file group separately.
 
-        let contentFiles = await getFilesRecursive(this.projectDir);
+        let allContentFiles = new Set<string>();
+        const includePatterns = this._contentFileFilter.includePatterns;
+        const excludePatterns = this._contentFileFilter.excludePatterns;
+        for (const includePattern of includePatterns) {
+            const includeFiles = await findFiles(this.projectDir, includePattern, ...excludePatterns);
+            
+            includeFiles.forEach(
+                includeFile => allContentFiles.add(includeFile)
+            );
+        }
+        
+        let contentFiles: string[] = Array.from(allContentFiles.values());
         contentFiles = contentFiles.filter(this.includesContentFile);
 
         if (extensions.length) {
@@ -47,6 +83,8 @@ export class DocFXProject {
             );
         }
 
+        contentFiles.sort();
+
         return contentFiles;
     }
 
@@ -54,6 +92,8 @@ export class DocFXProject {
      * Load and parse the specified DocFX project file.
      * 
      * @param projectFile The full path to the project file.
+     * 
+     * @returns {Promise<DocFXProject>} A promise that resolves to the {@link DocFXProject}.
      */
     public static async load(projectFile: string): Promise<DocFXProject> {
         const projectData = await readJson<DocFXProjectData>(projectFile);
@@ -117,9 +157,13 @@ function createFileFilter(baseDir: string, fileGroups: FileGroup[]): FileFilter 
         const entryExcludePatterns = (fileGroup.exclude as string[] || []).filter(
             (pattern: string) => !pattern.endsWith('.json') // Ignore Swagger files
         );
-        
-        includePatterns.push(...entryIncludePatterns);
-        excludePatterns.push(...entryExcludePatterns);
+
+        includePatterns.push(
+            ...entryIncludePatterns.map(pattern => pattern.replace(illegalGlobStar, legalGlobStar))
+        );
+        excludePatterns.push(
+            ...entryExcludePatterns.map(pattern => pattern.replace(illegalGlobStar, legalGlobStar))
+        );
     }
 
     return new FileFilter(baseDir, includePatterns, excludePatterns);
