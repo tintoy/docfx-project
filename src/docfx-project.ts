@@ -93,19 +93,12 @@ export class DocFXProject {
         }
 
         const topicMetadata: TopicMetadata[] = [];
-        async function processFile(contentFile: string): Promise<void> {
+        for (const contentFile of contentFiles) {
             const contentFileTopics = await getFileTopics(contentFile);
             topicMetadata.push(...contentFileTopics);
-
+            
             reportFileProcessed(contentFileTopics.length);
         }
-        await Promise.all(
-            contentFiles.map(contentFile => {
-                processFile(contentFile).catch(
-                    error => progress.error(error)
-                );
-            })
-        );
 
         progress.next('Scan complete.');
 
