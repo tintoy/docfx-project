@@ -98,8 +98,6 @@ export function createMatchers(...patterns: string[]): IMinimatch[] {
  * @param globPattern A globbing pattern describing the files to find.
  */
 export function findFiles(baseDir: string, globPattern: string, ...excludeGlobPatterns: string[]): Promise<string[]> {
-    console.log(baseDir, globPattern, excludeGlobPatterns);
-    
     return new Promise<string[]>((resolve, reject) => {
         const rawGlobOptions: glob.IOptions = {
             cwd: baseDir,
