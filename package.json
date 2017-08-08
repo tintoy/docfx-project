@@ -1,6 +1,6 @@
 {
   "name": "docfx-project",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Utilities for working with DocFX projects.",
   "main": "lib/index.js",
   "repository": {
