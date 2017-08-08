@@ -47,6 +47,9 @@ export class FileFilter {
         
         this._excludePatterns = excludePatterns || [];
         this._excludeMatchers = createMatchers(...this._excludePatterns);
+
+        // Preserve this.
+        this.shouldIncludeFile = this.shouldIncludeFile.bind(this);
     }
 
     /**
@@ -55,7 +58,7 @@ export class FileFilter {
      * @param filePath The full or relative path of the file.
      */
     public shouldIncludeFile(filePath: string): boolean {
-        const relativeFilePath = path.relative(this._baseDir, filePath);
+        const relativeFilePath = path.isAbsolute(filePath) ? path.relative(this._baseDir, filePath) : filePath;
 
         let shouldInclude = false;
         for (const include of this._includeMatchers) {

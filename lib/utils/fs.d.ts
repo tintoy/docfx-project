@@ -1,5 +1,4 @@
 import { IMinimatch } from 'minimatch';
-import { FileFilter } from './file-filter';
 /**
  * Read and parse file contents as JSON.
  * @param fileName The name of the file to read.
@@ -28,8 +27,9 @@ export declare function readYamlFrontMatter<T>(fileName: string): Promise<T>;
  */
 export declare function createMatchers(...patterns: string[]): IMinimatch[];
 /**
- * Recursively get a list of all files contained in the specified directory.
+ * Find all files and directories matching a specific pattern.
  *
- * @param baseDir The base directory to scan.
+ * @param baseDir The base directory in which to start searching.
+ * @param globPattern A globbing pattern describing the files to find.
  */
-export declare function getFilesRecursive(baseDir: string, filter?: FileFilter): Promise<string[]>;
+export declare function findFiles(baseDir: string, globPattern: string, ...excludeGlobPatterns: string[]): Promise<string[]>;

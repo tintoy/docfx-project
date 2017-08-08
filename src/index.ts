@@ -4,9 +4,10 @@
 
 export {
     DocFXProject,
+    FileGroup,
     DocFXProjectData,
-    DocFXBuildConfiguration,
-    FileGroup
+    DocFXProjectBuildData,
+    FileGroupData
 } from './docfx-project';
 
 export {

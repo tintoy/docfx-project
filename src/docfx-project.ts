@@ -1,5 +1,7 @@
 import * as path from 'path';
+import * as Rx from 'rxjs';
 
+import { TopicMetadata, TopicType, getFileTopics } from './topic-metadata';
 import { FileFilter } from './utils/file-filter';
 import { readJson, findFiles } from './utils/fs';
 
@@ -13,8 +15,8 @@ const legalGlobStar = '**/*.';
  * Represents a DocFX project and its files.
  */
 export class DocFXProject {
-    /** A FileFilter used to filter the project's content files. */
-    private _contentFileFilter: FileFilter;
+    /** FileGroups representing the project's content files. */
+    private _fileGroups: FileGroup[] = [];
     
     /** The full path to the project file (`docfx.json`). */
     public readonly projectFile: string;
@@ -31,11 +33,18 @@ export class DocFXProject {
     constructor(projectFile: string, projectData: DocFXProjectData) {
         this.projectFile = projectFile;
         this.projectDir = path.dirname(projectFile);
+        if (projectData.build && projectData.build.content) {
+            projectData.build.content.forEach(fileGroupData => {
+                this._fileGroups.push(
+                    new FileGroup(this.projectDir, fileGroupData)
+                );
+            });
+        }
 
-        this._contentFileFilter = createFileFilter(this.projectDir, projectData.build.content);
-
-        // Bloody this.
+        // Preserve this.
         this.includesContentFile = this.includesContentFile.bind(this);
+        this.getContentFiles = this.getContentFiles.bind(this);
+        this.getTopics = this.getTopics.bind(this);
     }
 
     /**
@@ -46,7 +55,54 @@ export class DocFXProject {
      * @returns {boolean} true, if the file is included in the project; otherwise, false.
      */
     public includesContentFile(filePath: string): boolean {
-        return this._contentFileFilter.shouldIncludeFile(filePath);
+        for (const fileGroup of this._fileGroups) {
+            if (fileGroup.includesFile(filePath))
+                return true;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Retrieve the metadata for all topics in the project.
+     * 
+     * @returns {Promise<string[]>} A promise that resolves to the file paths.
+     */
+    public async getTopics(progress?: Rx.Observer<string>): Promise<TopicMetadata[]> {
+        if (progress)
+            progress.next('Scanning for content files...');
+
+        const contentFiles = await this.getContentFiles('.md', '.yml');
+
+        const totalFileCount: number = contentFiles.length;
+        let topicCount = 0;
+        let processedFileCount = 0;
+        function reportFileProcessed(fileTopicCount: number): void {
+            topicCount += fileTopicCount;
+            processedFileCount++;
+
+            if (!progress)
+                return;
+
+            const percentComplete = Math.ceil(
+                (processedFileCount / totalFileCount) * 100
+            );
+
+            if (progress)
+                progress.next(`Discovered ${topicCount} topics (${percentComplete}% complete)...`);
+        }
+
+        const topicMetadata: TopicMetadata[] = [];
+        for (const contentFile of contentFiles) {
+            const contentFileTopics = await getFileTopics(contentFile);
+            topicMetadata.push(...contentFileTopics);
+
+            reportFileProcessed(contentFileTopics.length);
+        }
+
+        progress.next('Scan complete.');
+
+        return topicMetadata;
     }
 
     /**
@@ -57,29 +113,25 @@ export class DocFXProject {
      * @returns {Promise<string[]>} A promise that resolves to the file paths.
      */
     public async getContentFiles(...extensions: string[]): Promise<string[]> {
-        // This is cheating somewhat; there's no guarantee that the final base directory for a file group lies within the project directory.
-        // TODO: Capture file groups in constructor and walk each file group separately.
-
         let allContentFiles = new Set<string>();
-        const includePatterns = this._contentFileFilter.includePatterns;
-        const excludePatterns = this._contentFileFilter.excludePatterns;
-        for (const includePattern of includePatterns) {
-            const includeFiles = await findFiles(this.projectDir, includePattern, ...excludePatterns);
+        for (const fileGroup of this._fileGroups) {
+            const groupFiles = await fileGroup.getFiles(...extensions);
             
-            includeFiles.forEach(
-                includeFile => allContentFiles.add(includeFile)
+            groupFiles.forEach(
+                groupFile => allContentFiles.add(groupFile)
             );
         }
         
         let contentFiles: string[] = Array.from(allContentFiles.values());
-        contentFiles = contentFiles.filter(this.includesContentFile);
 
         if (extensions.length) {
             const filterExtensions = new Set<string>(extensions.map(
                 extension => extension.toLowerCase()
             ));
             contentFiles = contentFiles.filter(
-                contentFile => filterExtensions.has(path.extname(contentFile))
+                contentFile => filterExtensions.has(
+                    path.extname(contentFile).toLowerCase()
+                )
             );
         }
 
@@ -102,24 +154,98 @@ export class DocFXProject {
     }
 }
 
+/** Represents a group of files in a DocFX project. */
+export class FileGroup {
+    /** The base directory of the project containing the file group. */
+    public readonly projectBaseDir: string;
+
+    /** The full path of the base directory for the files in the file group. */
+    public readonly baseDir: string;
+
+    /** The base directory, relative to the project base directory, of the files in the file group. */
+    public readonly relativeBaseDir: string;
+
+    /** A {@link} FileFilter used to include / exclude files. */
+    public readonly fileFilter: FileFilter;
+
+    /** Create a new {@link FileGroup}. */
+    constructor(projectBaseDir: string, data: FileGroupData) {
+        this.projectBaseDir = projectBaseDir;
+        this.relativeBaseDir = data.src || '';
+        
+        this.baseDir = path.join(this.projectBaseDir, this.relativeBaseDir);
+
+        const includePatterns = data.files ? data.files.slice() : [];
+        const excludePatterns = data.exclude ? data.exclude.slice() : [];
+        this.fileFilter = new FileFilter(this.baseDir, includePatterns, excludePatterns);
+    }
+
+    /**
+     * Determine whether the specified file is included in the group.
+     * 
+     * @param filePath The full or relative path of the file.
+     * 
+     * @returns {boolean} true, if the file is included in the project; otherwise, false.
+     */
+    public includesFile(filePath: string): boolean {
+        return this.fileFilter.shouldIncludeFile(filePath);
+    }
+
+    /**
+     * Retrieve the paths of all files in the group.
+     * 
+     * @param extensions {string[]} Optional file extensions used to filter the results.
+     * 
+     * @returns {Promise<string[]>} A promise that resolves to the file paths.
+     */
+    public async getFiles(...extensions: string[]): Promise<string[]> {
+        let allFiles = new Set<string>();
+        const includePatterns = this.fileFilter.includePatterns;
+        const excludePatterns = this.fileFilter.excludePatterns;
+        for (const includePattern of includePatterns) {
+            const includeFiles = await findFiles(this.baseDir, includePattern, ...excludePatterns);
+            
+            includeFiles.forEach(
+                includeFile => allFiles.add(includeFile)
+            );
+        }
+        
+        let contentFiles: string[] = Array.from(allFiles.values());
+        contentFiles = contentFiles.filter(this.fileFilter.shouldIncludeFile);
+
+        if (extensions.length) {
+            const filterExtensions = new Set<string>(extensions.map(
+                extension => extension.toLowerCase()
+            ));
+            contentFiles = contentFiles.filter(
+                contentFile => filterExtensions.has(path.extname(contentFile))
+            );
+        }
+
+        contentFiles.sort();
+
+        return contentFiles;
+    }
+}
+
 /**
  * Represents the root of a DocFX project.
  */
 export interface DocFXProjectData {
     /** The project build configuration. */
-    build: DocFXBuildConfiguration | null;
+    build: DocFXProjectBuildData | null;
 }
 
 /**
  * Represents the build configuration for a DocFX project.
  */
-export interface DocFXBuildConfiguration {
+export interface DocFXProjectBuildData {
     /** The project's content file groups. */
-    content: FileGroup[] | null;
+    content: FileGroupData[] | null;
 }
 
 /** Represents the configuration for a group of files in a DocFX project. */
-export interface FileGroup {
+export interface FileGroupData {
     /** Relative glob patterns for files to include in the group. */
     files: string[];
 
@@ -131,40 +257,4 @@ export interface FileGroup {
 
     /** An optional relative destination directory for the group's resulting output files. */
     dest?: string;
-}
-
-/**
- * Create a new FileFilter based on the specified file groups.
- * 
- * @param baseDir The base directory (file groups are considered relative to this directory).
- * @param fileGroups One or more file groups from the DocFX project.
- */
-function createFileFilter(baseDir: string, fileGroups: FileGroup[]): FileFilter {
-    const includePatterns: string[] = [];
-    const excludePatterns: string[] = [];
-    for (const fileGroup of fileGroups) {
-        if (!fileGroup.files)
-            continue;
-
-        const entryBaseDirectory = path.join(baseDir, fileGroup.src || '');
-
-        const entryIncludePatterns = fileGroup.files.filter(
-            (pattern: string) => !pattern.endsWith('.json') // Ignore Swagger files
-        );
-        if (!entryIncludePatterns.length)
-            continue;
-
-        const entryExcludePatterns = (fileGroup.exclude as string[] || []).filter(
-            (pattern: string) => !pattern.endsWith('.json') // Ignore Swagger files
-        );
-
-        includePatterns.push(
-            ...entryIncludePatterns.map(pattern => pattern.replace(illegalGlobStar, legalGlobStar))
-        );
-        excludePatterns.push(
-            ...entryExcludePatterns.map(pattern => pattern.replace(illegalGlobStar, legalGlobStar))
-        );
-    }
-
-    return new FileFilter(baseDir, includePatterns, excludePatterns);
 }

@@ -2,12 +2,20 @@
  * Matchers for files (include / exclude).
  */
 export declare class FileFilter {
-    /** Matchers for including content files. */
-    private includeMatchers;
-    /** Matchers for excluding content files. */
-    private excludeMatchers;
+    /** Patterns for including files. */
+    private _includePatterns;
+    /** Matchers for including files. */
+    private _includeMatchers;
+    /** Patterns for excluding files. */
+    private _excludePatterns;
+    /** Matchers for excluding files. */
+    private _excludeMatchers;
     /** The base directory for comparisons. */
-    private baseDir;
+    private _baseDir;
+    /** Patterns for including files. */
+    readonly includePatterns: string[];
+    /** Patterns for excluding files. */
+    readonly excludePatterns: string[];
     /**
      * Create a new content file matcher.
      *
