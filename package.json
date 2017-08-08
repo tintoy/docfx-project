@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/tintoy/docfx-project.git"
   },
-  "types": "lib/utils/index.d.ts",
+  "typings": "lib/index.d.ts",
   "scripts": {
     "build": "./node_modules/.bin/tsc",
     "install": "./node_modules/.bin/tsc"
