@@ -9,8 +9,9 @@
   },
   "typings": "lib/index.d.ts",
   "scripts": {
-    "build": "./node_modules/.bin/tsc",
-    "install": "./node_modules/.bin/tsc"
+    "build": "./node_modules/.bin/tsc -p ./",
+    "build:live": "./node_modules/.bin/tsc --watch -p ./",
+    "install": "./node_modules/.bin/tsc -p ./"
   },
   "keywords": [],
   "author": "tintoy",
