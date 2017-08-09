@@ -75,10 +75,8 @@ export class DocFXProject {
         const contentFiles = await this.getContentFiles('.md', '.yml');
 
         const totalFileCount: number = contentFiles.length;
-        let topicCount = 0;
         let processedFileCount = 0;
         function reportFileProcessed(fileTopicCount: number): void {
-            topicCount += fileTopicCount;
             processedFileCount++;
 
             if (!progress)
@@ -89,7 +87,7 @@ export class DocFXProject {
             );
 
             if (progress)
-                progress.next(`Discovered ${topicCount} topics (${percentComplete}% complete)...`);
+                progress.next(`Discovering topics (${percentComplete}% complete)...`);
         }
 
         const topicMetadata: TopicMetadata[] = [];
