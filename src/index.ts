@@ -19,6 +19,11 @@ export {
 } from './topic-metadata';
 
 export {
+    MetadataCache,
+    MetadataCacheError
+} from './metadata-cache';
+
+export {
     observeTopicChanges
 } from './topic-change-adapter';
 

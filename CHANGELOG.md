@@ -7,3 +7,8 @@
 * Implement MetadataCache.
 * Implement tests for MetadataCache.
 * Implement tests for topic-change notification adapter.
+
+## v0.1.2
+
+* Revert to using `install` task instead of `prepublish`.
+* Expose `MetadataCache` and friends.
