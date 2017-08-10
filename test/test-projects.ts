@@ -32,14 +32,14 @@ export const expectedContentFiles = {
 };
 
 /**
- * Expected topic metadata for each project.
+ * Expected topic metadata for each project, keyed by UID.
  */
-export const expectedTopicMetadata = {
+export const expectedTopicMetadataByUID = {
     /**
      * Expected topic metadata for the simple project.
      */
-    simple: [
-        <TopicMetadata>{
+    simple: {
+        'Index': <TopicMetadata>{
             uid: 'Index',
             name: 'Index',
             title: 'Example article',
@@ -47,6 +47,18 @@ export const expectedTopicMetadata = {
             sourceFile: getTestProjectContentFile('simple', 'articles/index.md'),
             type: 'Conceptual'
         }
+    }
+};
+
+/**
+ * Expected topic metadata for each project.
+ */
+export const expectedTopicMetadata = {
+    /**
+     * Expected topic metadata for the simple project.
+     */
+    simple: [
+        expectedTopicMetadataByUID.simple['Index']
     ]
 };
 

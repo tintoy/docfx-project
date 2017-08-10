@@ -5,7 +5,7 @@
         "noImplicitAny": false,
         "outDir": "lib",
         "rootDir": ".",
-        "sourceMap": true,
+        "inlineSourceMap": true,
         "declaration": true,
         "lib": [ "es6", "dom" ]
     },

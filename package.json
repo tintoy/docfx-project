@@ -11,7 +11,7 @@
   "scripts": {
     "build": "./node_modules/.bin/tsc -p ./",
     "build:live": "./node_modules/.bin/tsc --watch -p ./",
-    "test": "mocha -r ts-node/register test/**/*.test.ts",
+    "test": "./node_modules/.bin/mocha -r ts-node/register test/**/*.test.ts",
     "prepublish": "./node_modules/.bin/tsc -p ./"
   },
   "keywords": [],
@@ -33,8 +33,10 @@
     "@types/mocha": "^2.2.41",
     "@types/mz": "0.0.31",
     "@types/node": "^8.0.19",
+    "@types/rimraf": "^2.0.0",
     "chai": "^4.1.1",
     "mocha": "^3.5.0",
+    "rimraf": "^2.6.1",
     "ts-node": "^3.3.0",
     "typescript": "^2.4.2"
   }

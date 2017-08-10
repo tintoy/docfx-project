@@ -61,6 +61,13 @@ export class MetadataCache {
     }
 
     /**
+     * Does the cache currently have an open project?
+     */
+    public get hasOpenProject(): boolean {
+        return this._docfxProject !== null;
+    }
+
+    /**
      * Create a new topic metadata cache.
      * 
      * @param stateDirectory {string} The directory for persisted cache state.
@@ -72,6 +79,32 @@ export class MetadataCache {
             ),
             error => console.log('Warning - error encountered by topic change observer: ' + error.message, error)
         );
+    }
+
+    /**
+     * Get the metadata for the topic (if any) associated with the specified UID.
+     * 
+     * @param uid The target UID.
+     * @returns The metadata, or null if no topic was found with the specified Id.
+     */
+    public getTopic(uid: string): TopicMetadata | null {
+        return this._topics.get(uid) || null;
+    }
+
+    /**
+     * Get metadata for some or all of the topics in the cache.
+     * 
+     * @param uidPrefix {string} If specified, only topics whose UID start with the specified prefix will be returned.
+     * @returns {TopicMetadata[]} The topic metadata.
+     */
+    public getTopics(uidPrefix?: string): TopicMetadata[] {
+        let topicMetadata = Array.from(this._topics.values());
+        if (uidPrefix)
+            topicMetadata = topicMetadata.filter(topic => topic.uid.startsWith(uidPrefix));
+
+        topicMetadata.sort();
+
+        return topicMetadata;
     }
 
     /**
@@ -93,8 +126,13 @@ export class MetadataCache {
     /**
      * Close the current DocFX project (if any).
      */
-    public closeProject(): void {
+    public async closeProject(): Promise<void> {
+        if (!this.hasOpenProject)
+            return;
+
         this._docfxProject = null;
+
+        await this.flush();
     }
 
     /**
@@ -133,32 +171,6 @@ export class MetadataCache {
     }
 
     /**
-     * Get the metadata for the topic (if any) associated with the specified UID.
-     * 
-     * @param uid The target UID.
-     * @returns The metadata, or null if no topic was found with the specified Id.
-     */
-    public getTopicMetadataByUID(uid: string): TopicMetadata | null {
-        return this._topics.get(uid);
-    }
-
-    /**
-     * Get metadata for some or all of the topics in the cache.
-     * 
-     * @param uidPrefix {string} If specified, only topics whose UID start with the specified prefix will be returned.
-     * @returns {TopicMetadata[]} The topic metadata.
-     */
-    public getTopicMetadata(uidPrefix?: string): TopicMetadata[] {
-        let topicMetadata = Array.from(this._topics.values());
-        if (uidPrefix)
-            topicMetadata = topicMetadata.filter(topic => topic.uid.startsWith(uidPrefix));
-
-        topicMetadata.sort();
-
-        return topicMetadata;
-    }
-
-    /**
      * Ensure that the cache is populated.
      * 
      * @param ignoreMissingProjectFile When true, then no alert will be displayed if no DocFX project file is found in the current workspace.
@@ -166,7 +178,10 @@ export class MetadataCache {
      * @returns {boolean} true, if the cache was successfully populated; otherwise, false.
      */
     public async ensurePopulated(): Promise<boolean> {
-        if (this.projectFile && this._topics)
+        if (!this.hasOpenProject)
+            throw new MetadataCacheError('No DocFX project is currently open.');
+        
+        if (this.isPopulated)
             return true;
 
         if (this.populatingPromise)
@@ -174,9 +189,11 @@ export class MetadataCache {
 
         const populatingPromise = this.populatingPromise = this.populate();
 
-        return await populatingPromise.then(
-            () => this.populatingPromise = null
-        );
+        return await populatingPromise.then((success: boolean) => {
+            this.populatingPromise = null;
+
+            return success;
+        });
     }
 
     /**
@@ -192,7 +209,7 @@ export class MetadataCache {
         this.ensureOpenProject();
 
         if (this._isPopulated)
-            return;
+            return true;
 
         this._isPopulated = await this.loadTopicMetadata(progress);
 
@@ -217,9 +234,8 @@ export class MetadataCache {
             if (persistedTopicCache) {
                 topicMetadata.push(...persistedTopicCache);
             } else {
-                progress.next(
-                    `Scanning DocFX project "${projectFile}"...`
-                );
+                if (progress)
+                    progress.next(`Scanning DocFX project "${projectFile}"...`);
 
                 const projectTopics = await this._docfxProject.getTopics(progress);
                 topicMetadata.push(...projectTopics);
@@ -240,18 +256,18 @@ export class MetadataCache {
                 contentFileTopics.push(topic);
             });
 
-            progress.next(
-                `$(check) Found ${this._topics.size} topics in DocFX project.`
-            );
+            if (progress)
+                progress.next(`Found ${this._topics.size} topics in DocFX project.`);
 
             await this.persist();
 
             return true;
 
         } catch (scanError) {
-            console.log(scanError);
+            console.log(scanError.stack);
 
-            progress.error(scanError);
+            if (progress)
+                progress.error(scanError);
 
             return false;
         }
@@ -267,10 +283,12 @@ export class MetadataCache {
     private async loadTopicsFromCacheFile(progress: Rx.Observer<string>): Promise<TopicMetadata[] | null> {
         const cacheFile = path.join(this.stateDirectory, 'topic-cache.json');
         
-        progress.next(`Attempting to load DocFX topic metadata cache from "${cacheFile}"...`);
+        if (progress)
+            progress.next(`Attempting to load DocFX topic metadata cache from "${cacheFile}"...`);
 
         if (!await fs.exists(cacheFile)) {
-            progress.next(`Cache file "${cacheFile}" not found.`);
+            if (progress)
+                progress.next(`Cache file "${cacheFile}" not found.`);
         
             return null;
         }
@@ -279,7 +297,8 @@ export class MetadataCache {
             await fs.readFile(cacheFile, { encoding: 'utf-8' })
         );
 
-        progress.next(`Read ${metadata.length} topics from "${cacheFile}".`);
+        if (progress)
+            progress.next(`Read ${metadata.length} topics from "${cacheFile}".`);
 
         return metadata;
     }

@@ -10,7 +10,7 @@ import { testProjectFiles, expectedContentFiles, expectedTopicMetadata } from '.
 let project: DocFXProject;
 let progress: Rx.Subject<string>;
 
-describe('Simple DocFX Project', () => {
+describe('Simple project', () => {
     beforeEach(done => {
         DocFXProject.load(testProjectFiles.simple)
             .then(loadedProject => {
@@ -70,7 +70,7 @@ describe('Simple DocFX Project', () => {
     });
 });
 
-describe('Simple DocFX Project with progress', () => {
+describe('Simple project with progress', () => {
     beforeEach(done => {
         progress = new Rx.Subject<string>();
         
