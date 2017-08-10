@@ -13,8 +13,14 @@ export {
 export {
     TopicMetadata,
     TopicType,
+    TopicChange,
+    TopicChangeType,
     getFileTopics
 } from './topic-metadata';
+
+export {
+    observeTopicChanges
+} from './topic-change-adapter';
 
 export {
     FileFilter

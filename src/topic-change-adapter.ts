@@ -22,7 +22,12 @@ export function observeTopicChanges(baseDir: string): Rx.Observable<TopicChange>
             if (changeType !== TopicChangeType.Removed)
                 changeNotification.topics = await getFileTopics(filePath);
 
+            changeNotification.topics.forEach(topic => {
+                topic.sourceFile = changeNotification.contentFile;
+            });
+
             subscriber.next(changeNotification);
+            console.log('notified');
         }
 
         const contentFileGlobs = [
@@ -51,6 +56,8 @@ export function observeTopicChanges(baseDir: string): Rx.Observable<TopicChange>
         });
         
         return () => {
+            subscriber.complete();
+
             watcher.close();
         };
     });

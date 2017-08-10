@@ -70,10 +70,7 @@ describe('Metadata cache for simple project with existing state file', () => {
         messages = [];
         progress.subscribe(
             message => messages.push(message),
-            error => {
-                console.log(error.stack);
-                expect.fail(null, null, error.stack);
-            }
+            error => expect.fail(null, null, error.stack)
         );
 
         isPopulated = await metadataCache.ensurePopulated(progress);

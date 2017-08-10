@@ -13,3 +13,14 @@ export function runAsync(done: MochaDone, action: () => Promise<void>): void {
             done(error);
         });
 }
+
+/**
+ * Create a promise that resolves after the specified delay.
+ * 
+ * @param milliseconds The delay, in milliseconds.
+ */
+export function delay(milliseconds: number): Promise<void> {
+    return new Promise((accept, reject) => {
+        setTimeout(() => accept(), milliseconds);
+    });
+}
