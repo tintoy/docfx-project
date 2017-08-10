@@ -61,6 +61,13 @@ export class MetadataCache {
     }
 
     /**
+     * The current project directory (if any).
+     */
+    public get projectDir(): string {
+        return this._docfxProject ? this._docfxProject.projectDir : null;
+    }
+
+    /**
      * Does the cache currently have an open project?
      */
     public get hasOpenProject(): boolean {
@@ -320,7 +327,9 @@ export class MetadataCache {
      * @param change A TopicChange representing the changed topic.
      */
     private async handleTopicChange(change: TopicChange): Promise<void> {
-        if (!this._docfxProject.includesContentFile(change.contentFile))
+        const contentFile = this._docfxProject.asRelativePath(change.contentFile);
+
+        if (!this._docfxProject.includesContentFile(contentFile))
             return;
 
         switch (change.changeType)
@@ -328,7 +337,7 @@ export class MetadataCache {
             case TopicChangeType.Added:
             case TopicChangeType.Changed:
             {
-                let contentFileTopics: TopicMetadata[] = this._topicsByContentFile.get(change.contentFile);
+                let contentFileTopics: TopicMetadata[] = this._topicsByContentFile.get(contentFile);
                 if (contentFileTopics) {
                     contentFileTopics.forEach((topic: TopicMetadata) => {
                         this._topics.delete(topic.uid);
@@ -336,7 +345,7 @@ export class MetadataCache {
                 }
 
                 contentFileTopics = [];
-                this._topicsByContentFile.set(change.contentFile, contentFileTopics);
+                this._topicsByContentFile.set(contentFile, contentFileTopics);
 
                 change.topics.forEach((topic: TopicMetadata) => {
                     this._topics.set(topic.uid, topic);
@@ -350,15 +359,15 @@ export class MetadataCache {
             }
             case TopicChangeType.Removed:
             {
-                const existingTopics: TopicMetadata[] = this._topicsByContentFile.get(change.contentFile);
+                const existingTopics: TopicMetadata[] = this._topicsByContentFile.get(contentFile);
                 if (existingTopics) {
-                    this._topicsByContentFile.delete(change.contentFile);
+                    this._topicsByContentFile.delete(contentFile);
                     
                     existingTopics.forEach(existingTopic => {
                         this._topics.delete(existingTopic.uid);
                     });
 
-                    this._topicsByContentFile.delete(change.contentFile);
+                    this._topicsByContentFile.delete(contentFile);
                 }
 
                 await this.persist();

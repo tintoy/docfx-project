@@ -64,6 +64,18 @@ export class DocFXProject {
     }
 
     /**
+     * Make the specified file or directory path relative to the project directory.
+     * 
+     * @param fileOrDirectoryPath The file path.
+     */
+    public asRelativePath(fileOrDirectoryPath: string): string {
+        if (path.isAbsolute(fileOrDirectoryPath))
+            return path.relative(this.projectDir, fileOrDirectoryPath);
+
+        return fileOrDirectoryPath;
+    }
+
+    /**
      * Retrieve the metadata for all topics in the project.
      * 
      * @returns {Promise<string[]>} A promise that resolves to the file paths.
