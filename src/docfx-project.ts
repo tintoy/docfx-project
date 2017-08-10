@@ -3,7 +3,7 @@ import * as Rx from 'rxjs';
 
 import { TopicMetadata, TopicType, getFileTopics } from './topic-metadata';
 import { FileFilter } from './utils/file-filter';
-import { readJson, findFiles } from './utils/fs';
+import { readJson, findFiles, readJsonSync } from './utils/fs';
 
 /** DocFX supports this '**' glob syntax, but we don't. */
 const illegalGlobStar = '**.';
@@ -98,7 +98,8 @@ export class DocFXProject {
             reportFileProcessed(contentFileTopics.length);
         }
 
-        progress.next('Scan complete.');
+        if (progress)
+            progress.next('Scan complete.');
 
         return topicMetadata;
     }
@@ -147,6 +148,19 @@ export class DocFXProject {
      */
     public static async load(projectFile: string): Promise<DocFXProject> {
         const projectData = await readJson<DocFXProjectData>(projectFile);
+
+        return new DocFXProject(projectFile, projectData);
+    }
+
+    /**
+     * Synchronously load and parse the specified DocFX project file.
+     * 
+     * @param projectFile The full path to the project file.
+     * 
+     * @returns {DocFXProject} The {@link DocFXProject}.
+     */
+    public static loadSync(projectFile: string): DocFXProject {
+        const projectData = readJsonSync<DocFXProjectData>(projectFile);
 
         return new DocFXProject(projectFile, projectData);
     }

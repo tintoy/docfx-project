@@ -1,6 +1,6 @@
 {
   "name": "docfx-project",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Utilities for working with DocFX projects.",
   "main": "lib/index.js",
   "repository": {
@@ -11,6 +11,7 @@
   "scripts": {
     "build": "./node_modules/.bin/tsc -p ./",
     "build:live": "./node_modules/.bin/tsc --watch -p ./",
+    "test": "mocha -r ts-node/register src/**/*.test.ts",
     "install": "./node_modules/.bin/tsc -p ./"
   },
   "keywords": [],
@@ -25,10 +26,14 @@
     "yaml-front-matter": "^3.4.0"
   },
   "devDependencies": {
+    "@types/chai": "^4.0.2",
     "@types/glob": "^5.0.30",
     "@types/js-yaml": "^3.9.0",
+    "@types/mocha": "^2.2.41",
     "@types/mz": "0.0.31",
     "@types/node": "^8.0.19",
+    "chai": "^4.1.1",
+    "mocha": "^3.5.0",
     "ts-node": "^3.3.0",
     "typescript": "^2.4.2"
   }

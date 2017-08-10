@@ -7,19 +7,31 @@ import { loadFront } from 'yaml-front-matter';
 
 /**
  * Read and parse file contents as JSON.
+ * 
  * @param fileName The name of the file to read.
  * @return The deserialised data.
  */
 export async function readJson<T>(fileName: string): Promise<T> {
-    const buffer: Buffer = await fs.readFile(fileName);
-    
     return <T>JSON.parse(
-        buffer.toString()
+        await fs.readFile(fileName, { encoding: 'utf8' })
+    );
+}
+
+/**
+ * Synchronously read and parse file contents as JSON.
+ * 
+ * @param fileName The name of the file to read.
+ * @return The deserialised data.
+ */
+export function readJsonSync<T>(fileName: string): T {
+    return <T>JSON.parse(
+        fs.readFileSync(fileName, { encoding: 'utf8' })
     );
 }
 
 /**
  * Read and parse YAML from file contents.
+ * 
  * @param fileName The name of the file to read.
  * @param expectedYamlMimeType An optional YAML MIME-type that must be matched (the file should start with "### YamlMime:expectedYamlMimeType").
  * @return The deserialised data.

@@ -9,7 +9,10 @@
         "declaration": true,
         "lib": [ "es6", "dom" ]
     },
-    "include": [ "src/**/*.ts" ],
+    "include": [
+        "src/**/*.ts",
+        "test/**/*.ts"
+    ],
     "exclude": [
         "node_modules",
         ".vscode-test"
