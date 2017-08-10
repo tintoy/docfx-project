@@ -53,6 +53,44 @@ export enum TopicType {
 }
 
 /**
+ * Represents a type of topic change.
+ */
+export enum TopicChangeType {
+    /** Topic(s) added. */
+    Added,
+
+    /** Topic(s) removed. */
+    Removed,
+
+    /** Topic(s) changed. */
+    Changed
+}
+
+/**
+ * Represents a change in one or more topic(s).
+ */
+export interface TopicChange {
+    /**
+     * The content file containing the topic(s).
+     * 
+     * Must be relative to DocFX project directory.
+     */
+    contentFile: string;
+
+    /**
+     * The type of change.
+     */
+    changeType: TopicChangeType;
+
+    /**
+     * The changed topic(s).
+     * 
+     * null for {@link TopicChangeType.Delete}.
+     * */
+    topics?: TopicMetadata[];
+}
+
+/**
  * Get metadata for the topic(s) defined in the specified content file.
  * 
  * @param contentFile The full path of the content file.

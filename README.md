@@ -13,3 +13,7 @@ const progressSubject = new Rx.Subject<string>(
 );
 const topicsWithProgress: TopicMetadata[] = await project.getTopics(progressSubject);
 ```
+
+## Known issues
+
+Currently, this only supports extracting topic metadata from conceptual (`.md`) and managed reference (`.yml`) files; does not support extracting topics from Swagger (`.json`) files.

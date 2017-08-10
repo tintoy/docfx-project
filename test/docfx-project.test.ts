@@ -3,52 +3,9 @@ import 'mocha';
 import * as path from 'path';
 import * as Rx from 'rxjs';
 
-import {
-    DocFXProject,
-    DocFXProjectData,
-    DocFXProjectBuildData,
-    FileGroupData,
-    FileGroup
-} from '../src/docfx-project';
-
-import {
-    TopicMetadata,
-    TopicType,
-    getFileTopics
-} from '../src/topic-metadata';
-
-const testProjectsDir = path.resolve(
-    path.join(__dirname, '..', 'test', 'projects')
-);
-function getTestProjectFile(projectName: string): string {
-    return path.join(testProjectsDir, projectName, 'docfx.json');
-}
-function getTestProjectContentFile(projectName: string, contentFile: string): string {
-    return path.join(testProjectsDir, projectName, contentFile);
-}
-
-const testProjectFiles = {
-    simple: getTestProjectFile('simple')
-};
-
-// Expected data
-const expectedContentFiles = {
-    simple: [
-        getTestProjectContentFile('simple', 'articles/index.md')
-    ]
-};
-const expectedTopicMetadata = {
-    simple: [
-        <TopicMetadata>{
-            uid: 'Index',
-            name: 'Index',
-            title: 'Example article',
-            detailedType: TopicType.Conceptual,
-            sourceFile: getTestProjectContentFile('simple', 'articles/index.md'),
-            type: 'Conceptual'
-        }
-    ]
-};
+import { DocFXProject, DocFXProjectData, DocFXProjectBuildData, FileGroupData, FileGroup } from '../src/docfx-project';
+import { TopicMetadata, TopicType, getFileTopics } from '../src/topic-metadata';
+import { testProjectFiles, expectedContentFiles, expectedTopicMetadata } from './test-projects';
 
 let project: DocFXProject;
 let progress: Rx.Subject<string>;

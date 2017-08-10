@@ -2,22 +2,23 @@
   "name": "docfx-project",
   "version": "0.0.9",
   "description": "Utilities for working with DocFX projects.",
-  "main": "lib/index.js",
+  "main": "lib/src/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/tintoy/docfx-project.git"
   },
-  "typings": "lib/index.d.ts",
+  "typings": "lib/src/index.d.ts",
   "scripts": {
     "build": "./node_modules/.bin/tsc -p ./",
     "build:live": "./node_modules/.bin/tsc --watch -p ./",
-    "test": "mocha -r ts-node/register src/**/*.test.ts",
+    "test": "mocha -r ts-node/register test/**/*.test.ts",
     "prepublish": "./node_modules/.bin/tsc -p ./"
   },
   "keywords": [],
   "author": "tintoy",
   "license": "MIT",
   "dependencies": {
+    "chokidar": "^1.7.0",
     "glob": "^7.1.2",
     "js-yaml": "^3.9.1",
     "minimatch": "^3.0.4",
