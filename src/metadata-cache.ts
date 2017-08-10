@@ -86,8 +86,12 @@ export class MetadataCache {
      * 
      * @param uid The target UID.
      * @returns The metadata, or null if no topic was found with the specified Id.
+     * 
+     * @throws MetadataCacheError The cache does not current have an open project.
      */
     public getTopic(uid: string): TopicMetadata | null {
+        this.ensureOpenProject();
+
         return this._topics.get(uid) || null;
     }
 
@@ -96,8 +100,12 @@ export class MetadataCache {
      * 
      * @param uidPrefix {string} If specified, only topics whose UID start with the specified prefix will be returned.
      * @returns {TopicMetadata[]} The topic metadata.
+     * 
+     * @throws MetadataCacheError The cache does not current have an open project.
      */
     public getTopics(uidPrefix?: string): TopicMetadata[] {
+        this.ensureOpenProject();
+
         let topicMetadata = Array.from(this._topics.values());
         if (uidPrefix)
             topicMetadata = topicMetadata.filter(topic => topic.uid.startsWith(uidPrefix));
@@ -162,7 +170,7 @@ export class MetadataCache {
         if (!await fs.exists(stateDirectory))
             await fs.mkdir(stateDirectory);
 
-        if (this._topics) {
+        if (this.isPopulated) {
             const stateData = JSON.stringify(Array.from(this._topics.values()), null, '    ');
             await fs.writeFile(this.cacheFile, stateData, { encoding: 'utf8' });
         } else if (await fs.exists(this.cacheFile)) {
@@ -173,11 +181,11 @@ export class MetadataCache {
     /**
      * Ensure that the cache is populated.
      * 
-     * @param ignoreMissingProjectFile When true, then no alert will be displayed if no DocFX project file is found in the current workspace.
+     * @param progress An optional observer used to report progress.
      * 
      * @returns {boolean} true, if the cache was successfully populated; otherwise, false.
      */
-    public async ensurePopulated(): Promise<boolean> {
+    public async ensurePopulated(progress?: Rx.Observer<string>): Promise<boolean> {
         if (!this.hasOpenProject)
             throw new MetadataCacheError('No DocFX project is currently open.');
         
@@ -187,7 +195,7 @@ export class MetadataCache {
         if (this.populatingPromise)
             return await this.populatingPromise;
 
-        const populatingPromise = this.populatingPromise = this.populate();
+        const populatingPromise = this.populatingPromise = this.populate(progress);
 
         return await populatingPromise.then((success: boolean) => {
             this.populatingPromise = null;
@@ -213,6 +221,8 @@ export class MetadataCache {
 
         this._isPopulated = await this.loadTopicMetadata(progress);
 
+        await this.persist();
+
         return this._isPopulated;
     }
 
@@ -232,6 +242,9 @@ export class MetadataCache {
             const topicMetadata: TopicMetadata[] = [];
             const persistedTopicCache = await this.loadTopicsFromCacheFile(progress);
             if (persistedTopicCache) {
+                if (progress)
+                    progress.next('Cache file exists; populating cache from state file.');
+
                 topicMetadata.push(...persistedTopicCache);
             } else {
                 if (progress)
@@ -258,8 +271,6 @@ export class MetadataCache {
 
             if (progress)
                 progress.next(`Found ${this._topics.size} topics in DocFX project.`);
-
-            await this.persist();
 
             return true;
 

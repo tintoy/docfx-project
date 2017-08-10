@@ -15,6 +15,8 @@ export function deleteRecursive(path: string): Promise<void> {
                 else
                     accept();
             });
+        } else {
+            accept();
         }
     });
 }
