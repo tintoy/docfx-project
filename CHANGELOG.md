@@ -6,3 +6,4 @@
 
 * Implement MetadataCache.
 * Implement tests for MetadataCache.
+* Implement tests for topic-change notification adapter.
