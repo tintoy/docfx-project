@@ -11,6 +11,7 @@
   "scripts": {
     "build": "./node_modules/.bin/tsc -p ./",
     "build:live": "./node_modules/.bin/tsc --watch -p ./",
+    "docs": "./node_modules/.bin/typedoc --mode modules --excludePrivate --out ./docs",
     "test": "./node_modules/.bin/mocha -r ts-node/register test/**/*.test.ts",
     "install": "./node_modules/.bin/tsc -p ./"
   },
@@ -38,6 +39,7 @@
     "mocha": "^3.5.0",
     "rimraf": "^2.6.1",
     "ts-node": "^3.3.0",
+    "typedoc": "0.8.0",
     "typescript": "^2.4.2"
   }
 }
