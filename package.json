@@ -1,6 +1,6 @@
 {
   "name": "docfx-project",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Utilities for working with DocFX projects.",
   "main": "lib/src/index.js",
   "repository": {
@@ -12,7 +12,7 @@
     "build": "./node_modules/.bin/tsc -p ./",
     "build:live": "./node_modules/.bin/tsc --watch -p ./",
     "test": "./node_modules/.bin/mocha -r ts-node/register test/**/*.test.ts",
-    "prepublish": "./node_modules/.bin/tsc -p ./"
+    "install": "./node_modules/.bin/tsc -p ./"
   },
   "keywords": [],
   "author": "tintoy",
