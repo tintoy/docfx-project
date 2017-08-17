@@ -27,7 +27,6 @@ export function observeTopicChanges(baseDir: string): Rx.Observable<TopicChange>
             });
 
             subscriber.next(changeNotification);
-            console.log('notified');
         }
 
         const contentFileGlobs = [
