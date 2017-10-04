@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@types/chai": "^4.0.2",
+    "@types/chokidar": "^1.7.3",
     "@types/glob": "^5.0.30",
     "@types/js-yaml": "^3.9.0",
     "@types/mocha": "^2.2.41",
