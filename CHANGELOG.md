@@ -1,3 +1,7 @@
+## v0.1.4
+
+* Recursively create metadata cache directory if required.
+
 ## v0.1.3
 
 * Revert to using `prepublish` task.

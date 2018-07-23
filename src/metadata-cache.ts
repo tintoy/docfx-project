@@ -1,4 +1,5 @@
 import * as fs from 'mz/fs';
+import { sync as mkdirRecursive } from 'mkdirp';
 import * as path from 'path';
 import * as Rx from 'rxjs';
 
@@ -175,7 +176,7 @@ export class MetadataCache {
     public async persist(): Promise<void> {
         const stateDirectory = path.dirname(this.cacheFile);
         if (!await fs.exists(stateDirectory))
-            await fs.mkdir(stateDirectory);
+            mkdirRecursive(stateDirectory);
 
         if (this.isPopulated) {
             const stateData = JSON.stringify(Array.from(this._topics.values()), null, '    ');
